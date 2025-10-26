@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { GameComponentProps } from '../../types';
-import socketService from '../../services/socket';
-import { useAuthStore } from '../../store/authStore';
+import { GameComponentProps } from '@core/types';
+import socketService from '@shared/services/socket';
+import { useAuthStore } from '@store/authStore';
 import toast from 'react-hot-toast';
 
 interface GameState {

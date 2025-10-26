@@ -1,19 +1,13 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { AppConfig } from '../core/config/app.config.js';
+import { LoggerUtil } from '../common/utils/logger.util.js';
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    return conn;
+    const conn = await mongoose.connect(AppConfig.database.uri, AppConfig.database.options);
+    LoggerUtil.success(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`❌ Error connecting to MongoDB: ${error.message}`);
+    LoggerUtil.error('MongoDB connection error:', error);
     process.exit(1);
   }
 };

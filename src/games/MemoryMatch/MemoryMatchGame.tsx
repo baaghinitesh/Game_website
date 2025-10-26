@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { GameComponentProps } from '../GamePluginRegistry';
+import { GameComponentProps } from '@games/GamePluginRegistry';
 
 interface Card {
   id: number;

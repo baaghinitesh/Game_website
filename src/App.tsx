@@ -1,20 +1,18 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useAuthStore } from './store/authStore';
-import socketService from './services/socket';
+import { useAuthStore } from '@store/authStore';
+import { socket } from '@shared';
+import { ROUTES } from '@core/constants/routes';
 
-// Layout
-import Navbar from './components/Navbar';
+// Layout Components
+import { Navbar, HomePage } from '@shared/components/layout';
 
-// Pages
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import GamesPage from './pages/GamesPage';
-import GamePlayPage from './pages/GamePlayPage';
-import ProfilePage from './pages/ProfilePage';
-import FriendsPage from './pages/FriendsPage';
+// Feature Pages
+import { LoginPage, RegisterPage } from '@features/auth';
+import { GamesPage, GamePlayPage } from '@features/games';
+import { ProfilePage } from '@features/profile';
+import { FriendsPage } from '@features/friends';
 
 function App() {
   const { user, isAuthenticated } = useAuthStore();
@@ -22,13 +20,13 @@ function App() {
   useEffect(() => {
     // Connect socket when user is authenticated
     if (isAuthenticated && user) {
-      socketService.connect(user.id);
+      socket.connect(user.id);
     }
 
     return () => {
       // Disconnect socket when component unmounts
       if (!isAuthenticated) {
-        socketService.disconnect();
+        socket.disconnect();
       }
     };
   }, [isAuthenticated, user]);
@@ -39,14 +37,14 @@ function App() {
       
       <main className="pt-16">
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/games" element={<GamesPage />} />
+          <Route path={ROUTES.HOME} element={<HomePage />} />
+          <Route path={ROUTES.AUTH.LOGIN} element={<LoginPage />} />
+          <Route path={ROUTES.AUTH.REGISTER} element={<RegisterPage />} />
+          <Route path={ROUTES.GAMES.LIST} element={<GamesPage />} />
           <Route path="/games/:category" element={<GamesPage />} />
-          <Route path="/play/:roomId" element={<GamePlayPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/friends" element={<FriendsPage />} />
+          <Route path={ROUTES.GAMES.PLAY} element={<GamePlayPage />} />
+          <Route path={ROUTES.USER.PROFILE} element={<ProfilePage />} />
+          <Route path={ROUTES.SOCIAL.FRIENDS} element={<FriendsPage />} />
         </Routes>
       </main>
 

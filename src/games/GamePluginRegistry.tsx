@@ -1,5 +1,5 @@
 import React from 'react';
-import { GamePlugin, GameComponentProps } from '../types';
+import { GamePlugin, GameComponentProps } from '@games/types';
 
 /**
  * FRONTEND GAME PLUGIN REGISTRY

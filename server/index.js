@@ -5,6 +5,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import loadAllGamePlugins from './plugins/loadGames.js';
+import { AppConfig } from './core/config/app.config.js';
+import { LoggerUtil } from './common/utils/logger.util.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -21,25 +23,21 @@ const app = express();
 const httpServer = createServer(app);
 
 // Initialize Socket.io
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
+const io = new Server(httpServer, AppConfig.socketio);
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(cors(AppConfig.cors));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'Server is running',
+    version: AppConfig.app.version,
+    env: AppConfig.app.env,
+  });
 });
 
 // API Routes
@@ -54,7 +52,7 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Server error:', err);
+  LoggerUtil.error('Server error:', err);
   res.status(500).json({ message: 'Internal server error' });
 });
 
@@ -62,8 +60,6 @@ app.use((err, req, res, next) => {
 initializeSocketHandlers(io);
 
 // Connect to database and start server
-const PORT = process.env.PORT || 5000;
-
 const startServer = async () => {
   try {
     // Connect to MongoDB
@@ -73,14 +69,14 @@ const startServer = async () => {
     loadAllGamePlugins();
     
     // Start server
-    httpServer.listen(PORT, () => {
-      console.log(`\n🚀 Server running on port ${PORT}`);
-      console.log(`📡 API: http://localhost:${PORT}/api`);
-      console.log(`🔌 Socket.io: http://localhost:${PORT}`);
-      console.log(`\n✨ Gaming Platform is ready!\n`);
+    httpServer.listen(AppConfig.server.port, () => {
+      LoggerUtil.success(`Server running on port ${AppConfig.server.port}`);
+      LoggerUtil.info(`API: http://localhost:${AppConfig.server.port}/api`);
+      LoggerUtil.info(`Socket.io: http://localhost:${AppConfig.server.port}`);
+      LoggerUtil.success(`${AppConfig.app.name} is ready!`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    LoggerUtil.error('Failed to start server:', error);
     process.exit(1);
   }
 };

@@ -1,221 +1,152 @@
-import { Game, GameSession, GameHistory } from '../models/index.js';
-import gameRegistry from '../plugins/GamePluginRegistry.js';
-import { v4 as uuidv4 } from 'uuid';
+import { GameService } from '../services/game.service.js';
+import { ResponseUtil } from '../common/utils/response.util.js';
+import { LoggerUtil } from '../common/utils/logger.util.js';
 
 export const getAllGames = async (req, res) => {
   try {
-    const games = await Game.find({ isActive: true });
-    res.json({ games });
+    const { category } = req.query;
+    const games = await GameService.getAllGames(category);
+    return ResponseUtil.success(res, { games });
   } catch (error) {
-    console.error('Get games error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Get all games error:', error);
+    return ResponseUtil.serverError(res, error.message);
   }
 };
 
 export const getGamesByCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    const games = await Game.find({ category, isActive: true });
-    res.json({ games });
+    const games = await GameService.getAllGames(category);
+    return ResponseUtil.success(res, { games });
   } catch (error) {
-    console.error('Get games by category error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Get games by category error:', error);
+    return ResponseUtil.serverError(res, error.message);
   }
 };
 
 export const getGameById = async (req, res) => {
   try {
     const { id } = req.params;
-    const game = await Game.findById(id);
-    
-    if (!game) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-
-    res.json({ game });
+    const game = await GameService.getGameById(id);
+    return ResponseUtil.success(res, { game });
   } catch (error) {
-    console.error('Get game error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Get game by ID error:', error);
+    return ResponseUtil.notFound(res, error.message);
   }
 };
 
-export const getRegisteredPlugins = async (req, res) => {
+export const getGameBySlug = async (req, res) => {
   try {
-    const plugins = gameRegistry.getAllPlugins();
-    res.json({ plugins });
+    const { slug } = req.params;
+    const game = await GameService.getGameBySlug(slug);
+    return ResponseUtil.success(res, { game });
   } catch (error) {
-    console.error('Get plugins error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Get game by slug error:', error);
+    return ResponseUtil.notFound(res, error.message);
   }
 };
 
 export const createGameSession = async (req, res) => {
   try {
-    const { gameId, isPrivate } = req.body;
-    const userId = req.user?._id;
+    const { gameId, isMultiplayer } = req.body;
+    const userId = req.user?._id || req.user?.id;
 
-    const game = await Game.findById(gameId);
-    if (!game) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-
-    const plugin = gameRegistry.getPlugin(game.pluginId);
-    if (!plugin) {
-      return res.status(400).json({ message: 'Game plugin not loaded' });
-    }
-
-    const roomId = uuidv4();
-    const inviteCode = isPrivate ? uuidv4().substring(0, 8).toUpperCase() : null;
-
-    const session = new GameSession({
-      gameId,
-      roomId,
-      maxPlayers: plugin.maxPlayers,
-      isPrivate,
-      inviteCode,
-      gameState: plugin.initializeState(),
-      players: userId ? [{
-        userId,
-        username: req.user.username,
-        isGuest: req.user.isGuest || false,
-      }] : [],
-    });
-
-    await session.save();
-
-    res.status(201).json({
-      message: 'Game session created',
-      session: {
-        id: session._id,
-        roomId: session.roomId,
-        inviteCode: session.inviteCode,
-        maxPlayers: session.maxPlayers,
-        currentPlayers: session.players.length,
-      },
-    });
+    const session = await GameService.createGameSession(gameId, userId, isMultiplayer);
+    return ResponseUtil.created(res, { session }, 'Game session created');
   } catch (error) {
-    console.error('Create session error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Create game session error:', error);
+    return ResponseUtil.badRequest(res, error.message);
   }
 };
 
 export const joinGameSession = async (req, res) => {
   try {
-    const { roomId } = req.params;
-    const userId = req.user?._id;
+    const { roomCode } = req.body;
+    const userId = req.user?._id || req.user?.id;
 
-    const session = await GameSession.findOne({ roomId });
-    if (!session) {
-      return res.status(404).json({ message: 'Game session not found' });
-    }
-
-    if (session.status !== 'waiting') {
-      return res.status(400).json({ message: 'Game already started' });
-    }
-
-    if (session.players.length >= session.maxPlayers) {
-      return res.status(400).json({ message: 'Game session is full' });
-    }
-
-    // Check if user already in session
-    const alreadyJoined = session.players.some(
-      p => p.userId && p.userId.toString() === userId?.toString()
-    );
-
-    if (alreadyJoined) {
-      return res.status(400).json({ message: 'Already joined this session' });
-    }
-
-    session.players.push({
-      userId,
-      username: req.user?.username || `Guest_${uuidv4().substring(0, 8)}`,
-      isGuest: !userId || req.user?.isGuest,
-    });
-
-    // Start game if full
-    if (session.players.length === session.maxPlayers) {
-      session.status = 'active';
-      session.startedAt = new Date();
-    }
-
-    await session.save();
-
-    res.json({
-      message: 'Joined game session',
-      session: {
-        id: session._id,
-        roomId: session.roomId,
-        status: session.status,
-        players: session.players,
-      },
-    });
+    const session = await GameService.joinGameSession(roomCode, userId);
+    return ResponseUtil.success(res, { session }, 'Joined game session');
   } catch (error) {
-    console.error('Join session error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Join game session error:', error);
+    return ResponseUtil.badRequest(res, error.message);
   }
 };
 
-export const getGameHistory = async (req, res) => {
+export const endGameSession = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { limit = 20 } = req.query;
+    const { sessionId, winnerId } = req.body;
 
-    const history = await GameHistory.find({ userId })
-      .populate('gameId', 'name thumbnail')
-      .sort({ playedAt: -1 })
-      .limit(parseInt(limit));
-
-    res.json({ history });
+    const session = await GameService.endGameSession(sessionId, winnerId);
+    return ResponseUtil.success(res, { session }, 'Game session ended');
   } catch (error) {
-    console.error('Get game history error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('End game session error:', error);
+    return ResponseUtil.badRequest(res, error.message);
   }
 };
 
 export const getLeaderboard = async (req, res) => {
   try {
     const { gameId } = req.params;
-    const { limit = 10 } = req.query;
-
-    const pipeline = [
-      { $match: { gameId: gameId } },
-      {
-        $group: {
-          _id: '$userId',
-          totalScore: { $sum: '$score' },
-          wins: {
-            $sum: { $cond: [{ $eq: ['$result', 'win'] }, 1, 0] }
-          },
-          gamesPlayed: { $sum: 1 },
-        }
-      },
-      { $sort: { totalScore: -1 } },
-      { $limit: parseInt(limit) },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user',
-        }
-      },
-      { $unwind: '$user' },
-      {
-        $project: {
-          username: '$user.username',
-          avatar: '$user.avatar',
-          totalScore: 1,
-          wins: 1,
-          gamesPlayed: 1,
-        }
-      }
-    ];
-
-    const leaderboard = await GameHistory.aggregate(pipeline);
-
-    res.json({ leaderboard });
+    const { limit } = req.query;
+    const leaderboard = await GameService.getLeaderboard(
+      gameId,
+      limit ? parseInt(limit) : 10
+    );
+    return ResponseUtil.success(res, { leaderboard });
   } catch (error) {
-    console.error('Get leaderboard error:', error);
-    res.status(500).json({ message: 'Server error' });
+    LoggerUtil.error('Get leaderboard error:', error);
+    return ResponseUtil.serverError(res, error.message);
+  }
+};
+
+export const getGameHistory = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const { limit } = req.query;
+
+    const history = await GameService.getUserGameHistory(
+      userId,
+      limit ? parseInt(limit) : 20
+    );
+    return ResponseUtil.success(res, { history });
+  } catch (error) {
+    LoggerUtil.error('Get game history error:', error);
+    return ResponseUtil.serverError(res, error.message);
+  }
+};
+
+export const getUserGameHistory = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const { limit } = req.query;
+
+    const history = await GameService.getUserGameHistory(
+      userId,
+      limit ? parseInt(limit) : 20
+    );
+    return ResponseUtil.success(res, { history });
+  } catch (error) {
+    LoggerUtil.error('Get user game history error:', error);
+    return ResponseUtil.serverError(res, error.message);
+  }
+};
+
+export const getAvailableGames = async (req, res) => {
+  try {
+    const games = GameService.getAvailableGames();
+    return ResponseUtil.success(res, { games });
+  } catch (error) {
+    LoggerUtil.error('Get available games error:', error);
+    return ResponseUtil.serverError(res, error.message);
+  }
+};
+
+export const getRegisteredPlugins = async (req, res) => {
+  try {
+    const games = GameService.getAvailableGames();
+    return ResponseUtil.success(res, { games });
+  } catch (error) {
+    LoggerUtil.error('Get registered plugins error:', error);
+    return ResponseUtil.serverError(res, error.message);
   }
 };

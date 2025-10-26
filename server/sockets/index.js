@@ -1,35 +1,37 @@
 import { GameSession } from '../models/index.js';
 import gameRegistry from '../plugins/GamePluginRegistry.js';
+import { LoggerUtil } from '../common/utils/logger.util.js';
+import { SOCKET_EVENTS } from '../core/constants/api.constants.js';
 
 // Store online users and their socket connections
 const onlineUsers = new Map(); // userId -> socketId
 const socketToUser = new Map(); // socketId -> userId
 
 export const initializeSocketHandlers = (io) => {
-  console.log('🔌 Initializing Socket.io handlers...');
+  LoggerUtil.info('Initializing Socket.io handlers...');
 
-  io.on('connection', (socket) => {
-    console.log(`✅ Client connected: ${socket.id}`);
+  io.on(SOCKET_EVENTS.CONNECT, (socket) => {
+    LoggerUtil.success(`Client connected: ${socket.id}`);
 
     // User authentication and online status
-    socket.on('user:online', (userId) => {
+    socket.on(SOCKET_EVENTS.USER_ONLINE, (userId) => {
       onlineUsers.set(userId, socket.id);
       socketToUser.set(socket.id, userId);
       
       // Broadcast to friends
       io.emit('user:status', { userId, status: 'online' });
-      console.log(`👤 User ${userId} is now online`);
+      LoggerUtil.info(`User ${userId} is now online`);
     });
 
     // Join a game room
-    socket.on('game:join-room', async ({ roomId, userId, username }) => {
+    socket.on(SOCKET_EVENTS.GAME_JOIN_ROOM, async ({ roomId, userId, username }) => {
       try {
         socket.join(roomId);
         
         // Get session
         const session = await GameSession.findOne({ roomId });
         if (!session) {
-          socket.emit('game:error', { message: 'Room not found' });
+          socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Room not found' });
           return;
         }
 
@@ -41,36 +43,36 @@ export const initializeSocketHandlers = (io) => {
         });
 
         // Send current game state to the player
-        socket.emit('game:state', {
+        socket.emit(SOCKET_EVENTS.GAME_STATE, {
           gameState: session.gameState,
           players: session.players,
         });
 
-        console.log(`🎮 User ${username} joined room ${roomId}`);
+        LoggerUtil.info(`User ${username} joined room ${roomId}`);
       } catch (error) {
-        console.error('Join room error:', error);
-        socket.emit('game:error', { message: 'Failed to join room' });
+        LoggerUtil.error('Join room error:', error);
+        socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Failed to join room' });
       }
     });
 
     // Leave a game room
-    socket.on('game:leave-room', ({ roomId, userId, username }) => {
+    socket.on(SOCKET_EVENTS.GAME_LEAVE_ROOM, ({ roomId, userId, username }) => {
       socket.leave(roomId);
       io.to(roomId).emit('game:player-left', { userId, username });
-      console.log(`👋 User ${username} left room ${roomId}`);
+      LoggerUtil.info(`User ${username} left room ${roomId}`);
     });
 
     // Handle game moves
-    socket.on('game:move', async ({ roomId, move, userId }) => {
+    socket.on(SOCKET_EVENTS.GAME_MOVE, async ({ roomId, move, userId }) => {
       try {
         const session = await GameSession.findOne({ roomId });
         if (!session) {
-          socket.emit('game:error', { message: 'Session not found' });
+          socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Session not found' });
           return;
         }
 
         if (session.status !== 'active') {
-          socket.emit('game:error', { message: 'Game is not active' });
+          socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Game is not active' });
           return;
         }
 
@@ -79,14 +81,14 @@ export const initializeSocketHandlers = (io) => {
         const plugin = gameRegistry.getPlugin(game.pluginId);
 
         if (!plugin) {
-          socket.emit('game:error', { message: 'Game plugin not found' });
+          socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Game plugin not found' });
           return;
         }
 
         // Validate move
         const validation = plugin.validateMove(session.gameState, move);
         if (!validation.valid) {
-          socket.emit('game:invalid-move', { error: validation.error });
+          socket.emit(SOCKET_EVENTS.GAME_INVALID_MOVE, { error: validation.error });
           return;
         }
 
@@ -127,22 +129,22 @@ export const initializeSocketHandlers = (io) => {
         await session.save();
 
         // Broadcast new state to all players in room
-        io.to(roomId).emit('game:state-update', {
+        io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATE, {
           gameState: newState,
           status: session.status,
         });
 
         if (session.status === 'finished') {
-          io.to(roomId).emit('game:ended', {
+          io.to(roomId).emit(SOCKET_EVENTS.GAME_ENDED, {
             winner: newState.winner,
             isDraw: newState.isDraw,
           });
         }
 
-        console.log(`🎯 Move processed in room ${roomId}`);
+        LoggerUtil.info(`Move processed in room ${roomId}`);
       } catch (error) {
-        console.error('Game move error:', error);
-        socket.emit('game:error', { message: 'Failed to process move' });
+        LoggerUtil.error('Game move error:', error);
+        socket.emit(SOCKET_EVENTS.GAME_ERROR, { message: 'Failed to process move' });
       }
     });
 
@@ -155,15 +157,15 @@ export const initializeSocketHandlers = (io) => {
           roomId,
           gameName,
         });
-        console.log(`📧 Invite sent from ${fromUserId} to ${toUserId}`);
+        LoggerUtil.info(`Invite sent from ${fromUserId} to ${toUserId}`);
       } else {
         socket.emit('friend:invite-failed', { message: 'Friend is offline' });
       }
     });
 
     // Chat messages in game room
-    socket.on('chat:message', ({ roomId, userId, username, message }) => {
-      io.to(roomId).emit('chat:message', {
+    socket.on(SOCKET_EVENTS.CHAT_MESSAGE, ({ roomId, userId, username, message }) => {
+      io.to(roomId).emit(SOCKET_EVENTS.CHAT_MESSAGE, {
         userId,
         username,
         message,
@@ -172,7 +174,7 @@ export const initializeSocketHandlers = (io) => {
     });
 
     // Disconnect
-    socket.on('disconnect', () => {
+    socket.on(SOCKET_EVENTS.DISCONNECT, () => {
       const userId = socketToUser.get(socket.id);
       if (userId) {
         onlineUsers.delete(userId);
@@ -180,11 +182,11 @@ export const initializeSocketHandlers = (io) => {
         
         // Broadcast offline status
         io.emit('user:status', { userId, status: 'offline' });
-        console.log(`❌ User ${userId} disconnected`);
+        LoggerUtil.info(`User ${userId} disconnected`);
       }
-      console.log(`👋 Client disconnected: ${socket.id}`);
+      LoggerUtil.info(`Client disconnected: ${socket.id}`);
     });
   });
 
-  console.log('✅ Socket.io handlers initialized');
+  LoggerUtil.success('Socket.io handlers initialized');
 };

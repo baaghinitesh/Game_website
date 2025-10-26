@@ -24,13 +24,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@pages/*": ["./src/pages/*"],
+      "@core/*": ["./src/core/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@features/*": ["./src/features/*"],
       "@games/*": ["./src/games/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@services/*": ["./src/services/*"],
       "@store/*": ["./src/store/*"],
-      "@types/*": ["./src/types/*"],
       "@styles/*": ["./src/styles/*"]
     }
   },
