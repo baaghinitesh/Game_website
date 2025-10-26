@@ -23,23 +23,23 @@ api.interceptors.request.use((config) => {
 // Auth API
 export const authAPI = {
   register: async (username: string, email: string, password: string) => {
-    const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password });
-    return data;
+    const { data } = await api.post<any>('/auth/register', { username, email, password });
+    return data.data || data;
   },
 
   login: async (email: string, password: string) => {
-    const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
-    return data;
+    const { data } = await api.post<any>('/auth/login', { email, password });
+    return data.data || data;
   },
 
   guestLogin: async () => {
-    const { data } = await api.post<AuthResponse>('/auth/guest');
-    return data;
+    const { data } = await api.post<any>('/auth/guest');
+    return data.data || data;
   },
 
   getProfile: async () => {
     const { data } = await api.get('/auth/profile');
-    return data.user;
+    return data.data?.user || data.user;
   },
 
   logout: async () => {
@@ -51,38 +51,38 @@ export const authAPI = {
 // Game API
 export const gameAPI = {
   getAllGames: async () => {
-    const { data } = await api.get<{ games: Game[] }>('/games');
-    return data.games;
+    const { data } = await api.get<any>('/games');
+    return data.data?.games || data.games || [];
   },
 
   getGamesByCategory: async (category: string) => {
-    const { data } = await api.get<{ games: Game[] }>(`/games/category/${category}`);
-    return data.games;
+    const { data } = await api.get<any>(`/games/category/${category}`);
+    return data.data?.games || data.games || [];
   },
 
   getGameById: async (id: string) => {
-    const { data } = await api.get<{ game: Game }>(`/games/${id}`);
-    return data.game;
+    const { data } = await api.get<any>(`/games/${id}`);
+    return data.data?.game || data.game;
   },
 
   createGameSession: async (gameId: string, isPrivate: boolean = false) => {
     const { data } = await api.post('/games/session', { gameId, isPrivate });
-    return data.session;
+    return data.data?.session || data.session;
   },
 
   joinGameSession: async (roomId: string) => {
     const { data } = await api.post(`/games/session/${roomId}/join`);
-    return data.session;
+    return data.data?.session || data.session;
   },
 
   getGameHistory: async (limit: number = 20) => {
-    const { data } = await api.get<{ history: GameHistory[] }>(`/games/history?limit=${limit}`);
-    return data.history;
+    const { data } = await api.get<any>(`/games/history?limit=${limit}`);
+    return data.data?.history || data.history || [];
   },
 
   getLeaderboard: async (gameId: string, limit: number = 10) => {
     const { data } = await api.get(`/games/leaderboard/${gameId}?limit=${limit}`);
-    return data.leaderboard;
+    return data.data?.leaderboard || data.leaderboard || [];
   },
 };
 
@@ -99,23 +99,23 @@ export const userAPI = {
   },
 
   getFriends: async () => {
-    const { data } = await api.get<{ friends: Friend[] }>('/users/friends');
-    return data.friends;
+    const { data } = await api.get<any>('/users/friends');
+    return data.data?.friends || data.friends || [];
   },
 
   getFriendRequests: async () => {
-    const { data } = await api.get<{ friendRequests: FriendRequest[] }>('/users/friends/requests');
-    return data.friendRequests;
+    const { data } = await api.get<any>('/users/friends/requests');
+    return data.data?.friendRequests || data.friendRequests || [];
   },
 
   searchUsers: async (query: string) => {
     const { data } = await api.get(`/users/search?query=${query}`);
-    return data.users;
+    return data.data?.users || data.users || [];
   },
 
   getUserStats: async () => {
     const { data } = await api.get('/users/stats');
-    return data;
+    return data.data || data;
   },
 };
 
