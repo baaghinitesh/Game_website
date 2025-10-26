@@ -2,11 +2,22 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { gameAPI, authAPI } from '@shared/services/api';
-import { Game } from '../types';
 import GameCard from '@features/games/components/GameCard';
 import ParticlesBackground from '@shared/components/common/ParticlesBackground';
 import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
 import { useAuthStore } from '@store/authStore';
+
+interface Game {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  thumbnail: string;
+  minPlayers: number;
+  maxPlayers: number;
+  isMultiplayer: boolean;
+}
 
 const categories = [
   { name: 'Arcade', emoji: '🎯', gradient: 'from-neon-blue to-neon-purple' },
