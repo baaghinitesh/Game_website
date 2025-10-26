@@ -1,5 +1,9 @@
 import frontendGameRegistry from './GamePluginRegistry';
 import TicTacToeGame from './TicTacToe/TicTacToeGame';
+import SnakeGame from './Snake/SnakeGame';
+import MemoryMatchGame from './MemoryMatch/MemoryMatchGame';
+import Game2048 from './2048/Game2048';
+import FlappyGame from './Flappy/FlappyGame';
 
 /**
  * LOAD ALL FRONTEND GAME PLUGINS
@@ -16,7 +20,7 @@ import TicTacToeGame from './TicTacToe/TicTacToeGame';
 export const loadAllFrontendGamePlugins = () => {
   console.log('🎮 Loading frontend game plugins...');
 
-  // Register Tic-Tac-Toe
+  // Register all games
   frontendGameRegistry.register({
     id: 'tictactoe',
     name: 'Tic Tac Toe',
@@ -27,16 +31,47 @@ export const loadAllFrontendGamePlugins = () => {
     component: TicTacToeGame,
   });
 
-  // Register more games here as you create them:
-  // frontendGameRegistry.register({
-  //   id: 'memory-match',
-  //   name: 'Memory Match',
-  //   category: 'puzzle',
-  //   minPlayers: 1,
-  //   maxPlayers: 1,
-  //   isMultiplayer: false,
-  //   component: MemoryMatchGame,
-  // });
+  frontendGameRegistry.register({
+    id: 'snake',
+    name: 'Snake Game',
+    category: 'arcade',
+    minPlayers: 1,
+    maxPlayers: 1,
+    isMultiplayer: false,
+    component: SnakeGame,
+  });
+
+  frontendGameRegistry.register({
+    id: 'memorymatch',
+    name: 'Memory Match',
+    category: 'puzzle',
+    minPlayers: 1,
+    maxPlayers: 1,
+    isMultiplayer: false,
+    component: MemoryMatchGame,
+  });
+
+  frontendGameRegistry.register({
+    id: '2048',
+    name: '2048',
+    category: 'puzzle',
+    minPlayers: 1,
+    maxPlayers: 1,
+    isMultiplayer: false,
+    component: Game2048,
+  });
+
+  frontendGameRegistry.register({
+    id: 'flappy',
+    name: 'Flappy Jump',
+    category: 'arcade',
+    minPlayers: 1,
+    maxPlayers: 1,
+    isMultiplayer: false,
+    component: FlappyGame,
+  });
+
+  // Add more games here as you create them
 
   console.log(`✅ Loaded ${frontendGameRegistry.getAllPlugins().length} frontend game plugins`);
 

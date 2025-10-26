@@ -5,6 +5,7 @@ import { gameAPI } from '../services/api';
 import { Game } from '../types';
 import GameCard from '../components/GameCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Leaderboard from '../components/Leaderboard';
 
 const GamesPage = () => {
   const { category } = useParams();
@@ -65,12 +66,24 @@ const GamesPage = () => {
         ))}
       </div>
 
-      {/* Games Grid */}
+      {/* Games Grid with Leaderboard */}
       {games.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map((game) => (
-            <GameCard key={game._id} game={game} />
-          ))}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Games Section */}
+          <div className="xl:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {games.map((game) => (
+                <GameCard key={game._id} game={game} />
+              ))}
+            </div>
+          </div>
+          
+          {/* Leaderboard Sidebar */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-4">
+              <Leaderboard gameId={games[0]?._id} limit={10} />
+            </div>
+          </div>
         </div>
       ) : (
         <div className="text-center text-text-secondary py-20">
