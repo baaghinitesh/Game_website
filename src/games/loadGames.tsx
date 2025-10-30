@@ -4,6 +4,7 @@ import SnakeGame from './Snake/SnakeGame';
 import MemoryMatchGame from './MemoryMatch/MemoryMatchGame';
 import Game2048 from './2048/Game2048';
 import FlappyGame from './Flappy/FlappyGame';
+import { LudoGame } from './Ludo';
 
 /**
  * LOAD ALL FRONTEND GAME PLUGINS
@@ -69,6 +70,16 @@ export const loadAllFrontendGamePlugins = () => {
     maxPlayers: 1,
     isMultiplayer: false,
     component: FlappyGame,
+  });
+
+  frontendGameRegistry.register({
+    id: 'ludo',
+    name: 'Ludo',
+    category: 'strategy',
+    minPlayers: 2,
+    maxPlayers: 4,
+    isMultiplayer: true,
+    component: LudoGame,
   });
 
   // Add more games here as you create them

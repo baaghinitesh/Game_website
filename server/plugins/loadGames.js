@@ -4,6 +4,7 @@ import SnakePlugin from './games/snake.plugin.js';
 import MemoryMatchPlugin from './games/memorymatch.plugin.js';
 import Game2048Plugin from './games/2048.plugin.js';
 import FlappyPlugin from './games/flappy.plugin.js';
+import LudoPlugin from './games/ludo.plugin.js';
 
 /**
  * LOAD ALL GAME PLUGINS
@@ -26,6 +27,7 @@ export const loadAllGamePlugins = () => {
   gameRegistry.register(MemoryMatchPlugin);
   gameRegistry.register(Game2048Plugin);
   gameRegistry.register(FlappyPlugin);
+  gameRegistry.register(LudoPlugin);
 
   // Add more games here as you create them:
   // gameRegistry.register(ChessPlugin);

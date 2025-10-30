@@ -28,26 +28,22 @@ const GamePlayPage = () => {
 
   const loadGameData = async () => {
     try {
-      // For now, we'll create a demo game object
-      // In production, you'd fetch this from the API based on roomId
-      const demoGame: Game = {
-        _id: roomId || 'demo',
-        name: 'Tic Tac Toe',
-        slug: 'tictactoe',
-        description: 'Classic Tic Tac Toe game',
-        category: 'puzzle',
-        thumbnail: '',
-        minPlayers: 2,
-        maxPlayers: 2,
-        isMultiplayer: true,
-        pluginId: 'tictactoe',
-        componentPath: '',
-        totalPlays: 0,
-        activePlayers: 0,
-        featured: false,
-      };
+      if (!roomId) {
+        toast.error('No game ID provided');
+        navigate('/games');
+        return;
+      }
+
+      // Fetch the actual game data from the API
+      const gameData = await gameAPI.getGameById(roomId);
       
-      setGame(demoGame);
+      if (!gameData) {
+        toast.error('Game not found');
+        navigate('/games');
+        return;
+      }
+      
+      setGame(gameData);
     } catch (error) {
       console.error('Failed to load game:', error);
       toast.error('Failed to load game');
